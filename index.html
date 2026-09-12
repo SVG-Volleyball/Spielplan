@@ -3698,8 +3698,10 @@ function gefiltert(){
   return zustand.termine.filter(t => {
     const m = team(t.teamId);
     if(!m || m.aktiv === false) return false;
-    if(filter.bereich !== "alle" && m.bereich !== filter.bereich) return false;
-    if(filter.teams.length && !filter.teams.includes(t.teamId)) return false;
+    // Sind Mannschaften gewählt, zählen nur sie – auch über Bereiche hinweg.
+    // Der Bereich allein wirkt erst, wenn keine Mannschaft gewählt ist.
+    if(filter.teams.length){ if(!filter.teams.includes(t.teamId)) return false; }
+    else if(filter.bereich !== "alle" && m.bereich !== filter.bereich) return false;
     if(filter.nurHeim && !t.heim) return false;
     return true;
   }).sort(sortieren);
@@ -3730,14 +3732,18 @@ function filterZeichnen(){
   for(const [wert,label] of BEREICHE){
     seg.append(h("button",{
       type:"button", "aria-pressed": String(filter.bereich===wert),
-      onclick:()=>{ filter.bereich=wert; filter.teams=[]; alles(); }
+      // Der Bereich wechselt nur die sichtbaren Chips; gewählte Mannschaften
+      // bleiben erhalten. Erst „Alle“ hebt die Auswahl wieder auf.
+      onclick:()=>{ filter.bereich=wert; if(wert==="alle") filter.teams=[]; alles(); }
     }, label));
   }
 
+  // Chips: Mannschaften des Bereichs plus alle bereits gewählten, damit eine
+  // Auswahl aus einem anderen Bereich sichtbar bleibt und abwählbar ist.
   const chips = $("#chips-team");
   chips.textContent = "";
   const sichtbar = zustand.mannschaften
-    .filter(m => m.aktiv !== false && (filter.bereich==="alle" || m.bereich===filter.bereich))
+    .filter(m => m.aktiv !== false && (filter.bereich==="alle" || m.bereich===filter.bereich || filter.teams.includes(m.id)))
     .sort((a,b)=>a.sortierung-b.sortierung);
   for(const m of sichtbar){
     chips.append(h("button",{
@@ -3757,7 +3763,7 @@ function filterZeichnen(){
   $("#btn-zuruecksetzen").hidden = !filterAktiv();
 
   // Zähler am eingeklappten Filter-Schalter
-  const anzahl = (filter.bereich!=="alle" ? 1:0) + filter.teams.length + (filter.nurHeim ? 1:0);
+  const anzahl = (filter.teams.length ? filter.teams.length : (filter.bereich!=="alle" ? 1:0)) + (filter.nurHeim ? 1:0);
   const zaehler = $("#filter-anzahl");
   zaehler.textContent = String(anzahl);
   zaehler.hidden = anzahl === 0;
