@@ -354,6 +354,8 @@ table.termine tr.tageszeile td{
 .td-team{font-weight:700;white-space:nowrap}
 .td-spieltag{font-weight:600;font-size:.76rem;color:var(--text-schwach);white-space:nowrap}
 .td-gegner div{padding:.05rem 0}
+.td-notiz{margin-top:.3rem;padding:.3rem .5rem;background:var(--violett-blass);border-radius:6px;
+  font-size:.82rem;color:var(--text);white-space:normal;max-width:24rem}
 .td-ort{color:var(--text-schwach);min-width:12rem}
 .td-status{white-space:nowrap}
 
@@ -760,6 +762,26 @@ table.termine tr.tageszeile td{
    "csvName": "SV Viktoria Gesmold",
    "aktiv": true,
    "sortierung": 18
+  },
+  {
+   "id": "u12w-1",
+   "name": "U12w I",
+   "bereich": "jugend",
+   "farbe": "#AE097D",
+   "liga": "BereichsQuali U12w Turnier 4",
+   "csvName": "SV Viktoria Gesmold I",
+   "aktiv": true,
+   "sortierung": 19
+  },
+  {
+   "id": "u12w-2",
+   "name": "U12w II",
+   "bereich": "jugend",
+   "farbe": "#6D1742",
+   "liga": "BereichsQuali U12w Turnier 4",
+   "csvName": "SV Viktoria Gesmold II",
+   "aktiv": true,
+   "sortierung": 20
   }
  ],
  "termine": [
@@ -3551,6 +3573,30 @@ table.termine tr.tageszeile td{
     }
    ],
    "notiz": ""
+  },
+  {
+   "id": "t-0118",
+   "teamId": "u12w-1",
+   "datum": "",
+   "beginn": "",
+   "ort": "",
+   "heim": false,
+   "spieltag": "BereichsQuali",
+   "spiele": [],
+   "schiri": [],
+   "notiz": "Turnier 4 gegen TV Cloppenburg 1 und 2, VfL Lintorf I, TuS Bersenbrück und SV Viktoria Gesmold II. Termin, Halle und Spielfolge hat der Verband noch nicht veröffentlicht."
+  },
+  {
+   "id": "t-0119",
+   "teamId": "u12w-2",
+   "datum": "",
+   "beginn": "",
+   "ort": "",
+   "heim": false,
+   "spieltag": "BereichsQuali",
+   "spiele": [],
+   "schiri": [],
+   "notiz": "Turnier 4 gegen TV Cloppenburg 1 und 2, VfL Lintorf I, TuS Bersenbrück und SV Viktoria Gesmold I. Termin, Halle und Spielfolge hat der Verband noch nicht veröffentlicht."
   }
  ]
 }</script>
@@ -3970,6 +4016,8 @@ function filterZeichnen(){
 
 /* ---------------- Terminliste zeichnen ---------------- */
 function badgeHeim(t){
+  // Steht die Halle noch nicht fest, ist auch Heim oder Auswärts offen
+  if(!t.ort) return null;
   return t.heim
     ? h("span",{class:"badge badge-heim"},"🏠 Heim")
     : h("span",{class:"badge badge-aus"},"Auswärts");
@@ -3991,6 +4039,8 @@ function routenLink(ort){
     : "https://www.google.com/maps/dir/?api=1&destination=" + ziel;
 }
 function ortLink(ort){
+  // Bei einem Turnier ohne veröffentlichten Spielplan steht die Halle noch nicht fest
+  if(!ort) return h("span",{class:"hinweis"},"Austragungsort steht noch nicht fest");
   return h("a",{class:"ort-link", href:routenLink(ort), target:"_blank", rel:"noopener",
                 title:"Route zu " + routenZiel(ort) + " planen"},
     h("span",{class:"ort-nadel","aria-hidden":"true"},"📍"),
@@ -4084,8 +4134,10 @@ function tabelleBauen(termine){
       h("td",{class:"td-team"},
         h("span",{class:farbKlasse(t.teamId)}, teamName(t.teamId)),
         t.spieltag ? h("div",{class:"td-spieltag"}, t.spieltag) : null),
-      h("td",{class:"td-gegner"}, (t.spiele||[]).map(s =>
-        h("div",{}, (s.zeit ? s.zeit+"  " : "") + gegnerName(s.gegner, liga)))),
+      h("td",{class:"td-gegner"},
+        (t.spiele||[]).map(s => h("div",{}, (s.zeit ? s.zeit+"  " : "") + gegnerName(s.gegner, liga))),
+        // Notizen stehen sonst nur in der Kartenansicht und wären hier unsichtbar
+        t.notiz ? h("div",{class:"td-notiz"}, t.notiz) : null),
       h("td",{class:"td-ort"}, ortLink(t.ort)),
       h("td",{}, (t.schiri||[]).length
         ? (t.schiri||[]).map(s => h("div",{}, (s.zeit ? s.zeit+"  " : "") + s.partie))
